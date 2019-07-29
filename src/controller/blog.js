@@ -1,48 +1,74 @@
+const {exec} = require('../db/mysql')
+
+
 const getList = (author, keyword)=>{
 
-    return [
-        {
-            id         :1,
-            title      :'标题A',
-            content    :'内容A',
-            author     :'neo'
-        }
-    ]
-}
+    let sql = `select * from blogs where 1=1 `
+
+    if(author){
+        sql+= `and author='${author}' `
+    }
+    if(keyword){
+        sql+= `and title like '%${keyword}%'`
+    }
+    sql += `order by createtime desc;`;
+
+    //return a promise
+    return exec(sql)
+};
 
 
 const getDetail = (id) => {
-    return {
-        id         :1,
-        title      :'标题A',
-        content    :'内容A',
-        author     :'neo'
-    }
-}
 
-//接收一个博客对象
-const newBlog = (blogData = {}) =>{
+    let sql = `select * from blogs where id=${id}; `;
 
-    console.log("新建成功",blogData)
+    //return a promise
+    return exec(sql).then(rows=>{
+        return rows[0]
+    })
+};
 
-    return{
-        id: 3
-    }
-}
+//create a new blog
+const newBlog = (blogData = {}) => {
 
+    const title = blogData.title;
+    const content = blogData.content;
+    const createTime = Date.now();
+    const author = blogData.author;
 
+    let sql = `
+    insert into blogs (title, content, createtime, author) 
+    values ('${title}','${content}',${createTime},'${author}');`
+
+    return exec(sql).then(insertData => {
+        // console.log('InsertData is', insertData);
+        return {
+            id:insertData.insertId
+        }
+    })
+};
+
+//update a blog
 const updateBlog = (id,blogData={}) =>{
 
-    console.log("更新成功",blogData)
+    const title   = blogData.title
+    const content = blogData.content
 
-    return true
-}
+    let sql = `
+        update blogs set title='${title}',content='${content}' where id=${id};
+    `
+    return exec(sql).then(updateData =>{
+        return updateData.affectedRows > 0
+    })
+};
 
-
-const deleteBlog = (id) => {
-
-    return true
-}
+//delete a blog
+const deleteBlog = (id,author) => {
+    let sql = `delete from blogs where id=${id} and author='${author}';`
+    return exec(sql).then(deleteData=>{
+        return deleteData.affectedRows > 0
+    })
+};
 
 module.exports = {
     getList,
